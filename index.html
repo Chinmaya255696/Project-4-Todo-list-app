@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #000;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 400px;
+            /* Adjust container width as needed */
+        }
+
+        input {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            background-color: #000;
+            color: #fff;
+            width: 45%;
+        }
+
+        select {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            background-color: #000;
+            color: #fff;
+        }
+
+        button {
+            background-color: #fff;
+            color: #000;
+            border: none;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        ul,
+        ol {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #fff;
+        }
+
+        .icons {
+            font-size: 15px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .icons:hover {
+            color: #ccc;
+        }
+
+        .completed {
+            color: #888;
+        }
+
+        #completedTasks {
+            display: none;
+        }
+
+        .alarm-clock {
+            font-size: 18px;
+            color: #f00;
+        }
+
+        #dateTime {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+    </style>
+    <title>Todo List App</title>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Display current date and time -->
+        <div id="dateTime">Loading...</div>
+        <h1>Todo List</h1>
+        <div>
+            <!-- Task input fields -->
+            <input type="text" id="taskInput" placeholder="Add a task">
+            <select id="timeInput">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+            </select>
+            <select id="minuteInput">
+                <option value="00">00</option>
+                <option value="05">05</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="25">25</option>
+                <option value="30">30</option>
+                <option value="35">35</option>
+                <option value="40">40</option>
+                <option value="45">45</option>
+                <option value="55">55</option>
+            </select>
+            <select id="ampmInput">
+                <option value="am">AM</option>
+                <option value="pm">PM</option>
+            </select>
+            <!-- Button to add a task -->
+            <button onclick="addTask()">Add Task</button>
+        </div>
+        <!-- Display the list of tasks -->
+        <ul id="taskList"></ul>
+        <!-- Buttons for task actions -->
+        <button onclick="deleteAllTasks()">Delete All Tasks</button>
+        <button onclick="toggleTaskHistory()">Task History</button>
+        <!-- Display the list of completed tasks -->
+        <ol id="completedTasks"></ol>
+    </div>
+
+    <script>
+        // Function to get the current date and time
+        function getCurrentDateTime() {
+            const options = { timeZone: 'Asia/Kolkata', hour12: true };
+            const dateTime = new Date().toLocaleString('en-US', options);
+            return dateTime;
+        }
+
+        // Function to update the displayed date and time
+        function updateDateTime() {
+            const dateTimeElement = document.getElementById('dateTime');
+            dateTimeElement.textContent = getCurrentDateTime();
+        }
+
+        // Function to save tasks to local storage
+        function saveToLocalStorage() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+        }
+
+        // Function to load tasks from local storage
+        function loadFromLocalStorage() {
+            const storedTasks = localStorage.getItem('tasks');
+            const storedCompletedTasks = localStorage.getItem('completedTasks');
+
+            tasks = storedTasks ? JSON.parse(storedTasks) : [];
+            completedTasks = storedCompletedTasks ? JSON.parse(storedCompletedTasks) : [];
+        }
+
+        // Update date and time every second
+        setInterval(updateDateTime, 1000);
+
+        // Initialize tasks arrays and load from local storage
+        let tasks = [];
+        let completedTasks = [];
+        loadFromLocalStorage();
+
+        // Render tasks and completed tasks, and update date and time
+        renderTasks();
+        renderCompletedTasks();
+        updateDateTime(); // Initial update
+
+        // Function to render the list of tasks
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${task.task}</span>
+                    <span>${task.time}</span>
+                    <span class="alarm-clock" id="alarmClock_${index}"></span>
+                    <button class="icons" onclick="completeTask(${index})">&#10004;</button>
+                    <button class="icons" onclick="editTask(${index})">&#9998;</button>
+                    <button class="icons" onclick="deleteTask(${index})">&#10006;</button>
+                `;
+                taskList.appendChild(li);
+                scheduleAlarm(index, task);
+            });
+        }
+
+        // Function to render the list of completed tasks
+        function renderCompletedTasks() {
+            const completedTasksList = document.getElementById('completedTasks');
+            completedTasksList.innerHTML = '';
+
+            completedTasks.forEach((task) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="completed">${task.task}</span>
+                    <span class="completed">${task.time}</span>
+                `;
+                completedTasksList.appendChild(li);
+            });
+        }
+
+        // Function to add a new task
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const hourInput = document.getElementById('timeInput');
+            const minuteInput = document.getElementById('minuteInput');
+            const ampmInput = document.getElementById('ampmInput');
+
+            const task = taskInput.value.trim();
+            const time = `${hourInput.value}:${minuteInput.value} ${ampmInput.value}`;
+
+            if (task !== '') {
+                tasks.push({ task, time });
+                taskInput.value = '';
+                renderTasks();
+                saveToLocalStorage();
+            }
+        }
+
+        // Function to mark a task as completed
+        function completeTask(index) {
+            const completedTask = tasks.splice(index, 1)[0];
+            completedTasks.push(completedTask);
+            renderTasks();
+            renderCompletedTasks();
+            saveToLocalStorage();
+        }
+
+        // Function to edit a task
+        function editTask(index) {
+            const newTask = prompt('Edit task:', tasks[index].task);
+
+            if (newTask !== null) {
+                tasks[index].task = newTask.trim();
+                renderTasks();
+                saveToLocalStorage();
+            }
+        }
+
+        // Function to delete a task
+        function deleteTask(index) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                tasks.splice(index, 1);
+                renderTasks();
+                saveToLocalStorage();
+            }
+        }
+
+        // Function to delete all tasks
+        function deleteAllTasks() {
+            if (confirm('Are you sure you want to delete all tasks?')) {
+                tasks = [];
+                renderTasks();
+                saveToLocalStorage();
+            }
+        }
+
+        // Function to toggle the display of completed tasks
+        function toggleTaskHistory() {
+            const completedTasksList = document.getElementById('completedTasks');
+            const button = document.querySelectorAll('button')[5];
+
+            if (completedTasksList.style.display === 'none') {
+                completedTasksList.style.display = 'block';
+            } else {
+                completedTasksList.style.display = 'none';
+            }
+        }
+
+        // Function to schedule an alarm for a task
+        function scheduleAlarm(index, task) {
+            const [hour, minute, ampm] = task.time.split(/:|\s/);
+            const scheduledTime = new Date();
+            scheduledTime.setHours(ampm === 'pm' ? parseInt(hour, 10) + 12 : parseInt(hour, 10));
+            scheduledTime.setMinutes(parseInt(minute, 10));
+            scheduledTime.setSeconds(0);
+
+            const currentTime = new Date();
+            const timeDifference = scheduledTime - currentTime;
+
+            if (timeDifference > 0) {
+                setTimeout(() => {
+                    playAlarmSound();
+                    showAlarmClock(index);
+                    completeTask(index);
+                }, timeDifference);
+            }
+        }
+
+        // Function to play the alarm sound
+        function playAlarmSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency of the beep sound
+            oscillator.connect(audioContext.destination);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1); // Play for 1 second
+        }
+
+        // Function to show the alarm clock icon for a task
+        function showAlarmClock(index) {
+            const alarmClockElement = document.getElementById(`alarmClock_${index}`);
+            alarmClockElement.textContent = '⏰';
+        }
+
+        // Update date and time every second
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+
+</html>
